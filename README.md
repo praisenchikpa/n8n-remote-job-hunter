@@ -2,7 +2,7 @@
 
 Twice a day, pulls remote jobs from nine free job feeds, filters for AI / automation / n8n / no-code roles, scores them against your CV, drafts a tailored cover letter, and sends the good fits to Telegram and a Google Sheet.
 
-**23 nodes** - built with [n8n](https://n8n.io).
+**23 nodes** - built with [n8n](https://n8n.io), Google Gemini, Telegram Bot API, Google Sheets, Gmail, n8n Data Tables
 
 ## How it works
 
