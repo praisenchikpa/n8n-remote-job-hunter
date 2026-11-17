@@ -1,0 +1,330 @@
+{
+  "name": "Remote Job Hunter - AI Automation and n8n",
+  "nodes": [
+    {
+      "parameters": {"rule": {"interval": [{"triggerAtHour": 8}, {"triggerAtHour": 17}]}},
+      "name": "Twice Daily",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [0, 96]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {"__rl": true, "value": "YOUR_DATA_TABLE_ID", "mode": "list", "cachedResultName": "job hunter profile"},
+        "matchType": "allConditions",
+        "filters": {"conditions": [{"keyName": "profile_key", "keyValue": "main"}]},
+        "limit": 1
+      },
+      "name": "Load My Profile",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [224, 96],
+      "executeOnce": true
+    },
+    {
+      "parameters": {"url": "https://remotive.com/api/remote-jobs?search=automation&limit=60", "options": {"timeout": 30000}},
+      "name": "Remotive",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [496, 224],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://remoteok.com/api",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "User-Agent", "value": "Mozilla/5.0 (n8n job hunter)"}]},
+        "options": {"timeout": 30000}
+      },
+      "name": "RemoteOK",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [720, 224],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://himalayas.app/jobs/api?limit=100",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "User-Agent", "value": "Mozilla/5.0 (n8n job hunter)"}]},
+        "options": {"timeout": 30000}
+      },
+      "name": "Himalayas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [944, 224],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {"url": "https://jobicy.com/api/v2/remote-jobs?count=50&tag=automation", "options": {"timeout": 30000}},
+      "name": "Jobicy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [1168, 224],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {"url": "https://www.arbeitnow.com/api/job-board-api", "options": {"timeout": 30000}},
+      "name": "Arbeitnow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [1392, 224],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {"url": "https://weworkremotely.com/remote-jobs.rss", "options": {}},
+      "name": "We Work Remotely",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [1616, 224],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {"url": "https://www.workingnomads.com/api/exposed_jobs/", "options": {"timeout": 30000}},
+      "name": "Working Nomads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [1840, 416],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {"url": "https://jobspresso.co/feed/?post_type=job_listing", "options": {}},
+      "name": "Jobspresso",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [2064, 416],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {"url": "https://remotive.com/api/remote-jobs?search=no-code&limit=60", "options": {"timeout": 30000}},
+      "name": "Remotive n8n and no-code",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [2288, 416],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const safe = (name) => { try { return $(name).all().map(i => i.json); } catch (e) { return []; } };\nconst strip = (h) => String(h || '').replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/g, ' ').replace(/\\s+/g, ' ').trim();\nconst jobs = [];\nconst add = (source, title, company, url, date, text, apply, loc) => {\n  if (title && url) jobs.push({ source, title: String(title), company: company || '', url, apply_url: apply || url, date, loc: [].concat(loc || []).join(' '), text: strip(text).slice(0, 1500) });\n};\nsafe('Remotive').forEach(r => (r.jobs || []).forEach(j => add('Remotive', j.title, j.company_name, j.url, j.publication_date, (j.description || '') + ' ' + (j.tags || []).join(' '), null, j.candidate_required_location)));\nsafe('RemoteOK').forEach(j => { if (j.position) add('RemoteOK', j.position, j.company, j.url, j.date, (j.description || '') + ' ' + (j.tags || []).join(' '), j.apply_url, j.location); });\nsafe('Himalayas').forEach(r => (r.jobs || []).forEach(j => add('Himalayas', j.title, j.companyName, j.applicationLink || j.guid, j.pubDate ? new Date(Number(j.pubDate) * 1000).toISOString() : null, (j.excerpt || '') + ' ' + (j.categories || []).join(' '))));\nsafe('Jobicy').forEach(r => (r.jobs || []).forEach(j => add('Jobicy', j.jobTitle, j.companyName, j.url, j.pubDate, (j.jobExcerpt || '') + ' ' + [].concat(j.jobIndustry || []).join(' '), null, j.jobGeo)));\nsafe('Arbeitnow').forEach(r => (r.data || []).forEach(j => { if (j.remote) add('Arbeitnow', j.title, j.company_name, j.url, j.created_at ? new Date(Number(j.created_at) * 1000).toISOString() : null, (j.description || '') + ' ' + (j.tags || []).join(' ')); }));\nsafe('Working Nomads').forEach(j => add('Working Nomads', j.title, j.company_name, j.url, j.pub_date, (j.description || '') + ' ' + (j.tags || '') + ' ' + (j.category_name || ''), null, j.location));\nsafe('Remotive n8n and no-code').forEach(r => (r.jobs || []).forEach(j => add('Remotive', j.title, j.company_name, j.url, j.publication_date, (j.description || '') + ' ' + (j.tags || []).join(' '))));\nsafe('Jobspresso').forEach(j => add('Jobspresso', j.title, '', j.link, j.isoDate || j.pubDate, j.contentSnippet || j.content));\nsafe('We Work Remotely').forEach(j => {\n  const t = String(j.title || '');\n  const idx = t.indexOf(':');\n  add('We Work Remotely', idx > -1 ? t.slice(idx + 1).trim() : t, idx > -1 ? t.slice(0, idx).trim() : '', j.link, j.isoDate || j.pubDate, j.contentSnippet || j.content);\n});\nconst kw = /(n8n|automation|automate|zapier|make\\.com|integromat|no[- ]?code|low[- ]?code|workflow|\\bai\\b|artificial intelligence|llm|prompt|agentic|rpa|chatbot|gpt|implementation specialist)/i;\nconst cutoff = Date.now() - 7 * 24 * 3600 * 1000;\nconst okLoc = /(worldwide|anywhere|global|africa|nigeria|emea|international|any location|all countries)/i;\nconst badText = /(us only|usa only|u\\.s\\. only|must (reside|be located|live) in (the )?(us|usa|united states|uk|canada|eu)|us citizens?|work authori[sz]ation|green card|eu only|uk only|canada only)/i;\nconst blockedLoc = /(usa|united states|u\\.s\\.|canada|uk|united kingdom|europe|germany|france|australia|india|philippines|latam|latin america|brazil|mexico|spain|poland|netherlands|ireland|israel|singapore)/i;\nconst seen = new Set();\nconst out = [];\nfor (const j of jobs) {\n  if (seen.has(j.url)) continue;\n  if (j.loc && !okLoc.test(j.loc) && blockedLoc.test(j.loc)) continue;\n  if (badText.test(j.title + ' ' + j.text)) continue;\n  seen.add(j.url);\n  const ts = j.date ? new Date(j.date).getTime() : NaN;\n  if (!isNaN(ts) && ts < cutoff) continue;\n  if (!kw.test(j.title + ' ' + j.text)) continue;\n  out.push({ json: j });\n}\nreturn out;"
+      },
+      "name": "Merge and Filter Jobs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1840, 224]
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.url }}",
+        "options": {"scope": "node", "historySize": 5000}
+      },
+      "name": "Skip Already Sent",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [1024, 224]
+    },
+    {
+      "parameters": {"maxItems": 12},
+      "name": "Limit",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [1248, 224]
+    },
+    {
+      "parameters": {
+        "modelId": {"__rl": true, "mode": "id", "value": "models/gemini-3.7-flash"},
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a job-application assistant for a candidate seeking remote work in AI automation, n8n, AI implementation and no-code/low-code roles (agencies, freelance and contract roles are fine). The candidate needs a job quickly and is based in NIGERIA, so the job must accept applicants living in Nigeria (worldwide, anywhere, Africa or EMEA remote roles are fine; roles restricted to specific other countries, requiring local work authorization, or a specific country's residency are NOT).\n\nLocation info from listing: {{ $json.loc }}\n\nCANDIDATE CV:\n{{ $('Load My Profile').first().json.cv_text }}\n\nPORTFOLIO: {{ $('Load My Profile').first().json.portfolio_url }}\n\nJOB:\nTitle: {{ $json.title }}\nCompany: {{ $json.company }}\nSource: {{ $json.source }}\nDescription: {{ $json.text }}\n\nReturn ONLY valid JSON with keys: accepts_nigeria (true if the job clearly or plausibly accepts remote workers in Nigeria, false if it clearly excludes Nigeria), score (integer 1-10 fit), summary (one sentence about the role), why_fit (one sentence), next_steps (short: how to apply, e.g. apply via link, or email the company), cover_letter (tailored, concise, human-sounding, under 180 words, mentions the portfolio link)."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "builtInTools": {"googleSearch": false, "urlContext": false, "codeExecution": false},
+        "options": {"temperature": 0.4}
+      },
+      "name": "Score and Draft Application",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [1552, 224],
+      "credentials": {"googlePalmApi": {"name": "Google Gemini(PaLM) Api account"}}
+    },
+    {
+      "parameters": {
+        "jsCode": "const jobs = $('Limit').all();\nconst out = [];\n$input.all().forEach((item, i) => {\n  const j = jobs[i].json;\n  let raw = (item.json.content && item.json.content.parts && item.json.content.parts[0] && item.json.content.parts[0].text) || item.json.output || item.json.text || item.json;\n  let p = {};\n  if (typeof raw === 'string') {\n    raw = raw.replace(/```json/gi, '').replace(/```/g, '').trim();\n    try { p = JSON.parse(raw); } catch (e) { p = { score: 5, summary: raw.slice(0, 200) }; }\n  } else { p = raw; }\n  const score = Number(p.score) || 0;\n  if (score < 5) return;\n  if (p.accepts_nigeria === false || String(p.accepts_nigeria).toLowerCase() === 'false') return;\n  const em = (String(j.text || '') + ' ' + String(p.next_steps || '')).match(/[\\w.+-]+@[\\w-]+\\.[\\w.-]+/);\n  out.push({ json: { ...j, apply_email: em ? em[0] : '', score, summary: p.summary || '', why_fit: p.why_fit || '', next_steps: p.next_steps || 'Apply via link', cover_letter: p.cover_letter || '', found_at: new Date().toISOString() } });\n});\nout.sort((a, b) => b.json.score - a.json.score);\nreturn out;"
+      },
+      "name": "Parse and Keep Good Fits",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1904, 224]
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=Job fit {{ $json.score }}/10 - {{ $json.title }}\n{{ $json.company }} ({{ $json.source }})\n\nWhat it is: {{ $json.summary }}\nWhy you fit: {{ $json.why_fit }}\nNext step: {{ $json.next_steps }}\n\nApply: {{ $json.apply_url }}\n\nDraft cover letter:\n{{ String($json.cover_letter).slice(0, 2500) }}",
+        "additionalFields": {"appendAttribution": false, "disable_web_page_preview": true}
+      },
+      "name": "Send Job to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2032, 192],
+      "credentials": {"telegramApi": {"name": "Telegram account"}}
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2},
+          "conditions": [
+            {
+              "id": "email",
+              "leftValue": "={{ $json.apply_email }}",
+              "rightValue": "",
+              "operator": {"type": "string", "operation": "notEmpty", "singleValue": true}
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Has Apply Email",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2032, 384]
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "=Application: {{ $json.title }}",
+        "message": "={{ $json.cover_letter }}",
+        "options": {"sendTo": "={{ $json.apply_email }}"}
+      },
+      "name": "Draft Application Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [2256, 384],
+      "credentials": {"gmailOAuth2": {"name": "Gmail account"}}
+    },
+    {
+      "parameters": {
+        "formTitle": "Job Hunter - Upload your CV",
+        "formDescription": "Upload your CV (PDF) and your portfolio link. The job hunter uses them to score jobs and write your cover letters. Submit again anytime to update.",
+        "formFields": {
+          "values": [
+            {"fieldLabel": "CV", "fieldType": "file", "fieldName": "cv", "multipleFiles": false, "acceptFileTypes": ".pdf", "requiredField": true},
+            {"fieldLabel": "Portfolio link", "fieldName": "portfolio_link", "requiredField": true}
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "path": "job-hunter-cv",
+          "respondWithOptions": {"values": {"formSubmittedText": "Saved. The job hunter will use this CV and portfolio link from the next run."}}
+        }
+      },
+      "name": "Upload CV Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [48, 736]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {"__rl": true, "value": "YOUR_DATA_TABLE_ID", "mode": "list", "cachedResultName": "job hunter profile"},
+        "matchType": "allConditions",
+        "filters": {"conditions": [{"keyName": "profile_key", "keyValue": "main"}]},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "profile_key": "main",
+            "cv_text": "={{ $json.text }}",
+            "portfolio_url": "={{ $('Upload CV Form').item.json.portfolio_link }}"
+          },
+          "matchingColumns": ["profile_key"],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Save CV and Link",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [576, 768]
+    },
+    {
+      "parameters": {"operation": "pdf", "binaryPropertyName": "cv", "options": {}},
+      "name": "Extract from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [320, 752]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {"__rl": true, "mode": "id", "value": "YOUR_GOOGLE_SHEET_ID"},
+        "sheetName": {"__rl": true, "mode": "name", "value": "Jobs"},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "found_at": "={{ $json.found_at }}",
+            "score": "={{ $json.score }}",
+            "title": "={{ $json.title }}",
+            "company": "={{ $json.company }}",
+            "source": "={{ $json.source }}",
+            "url": "={{ $json.apply_url }}",
+            "summary": "={{ $json.summary }}",
+            "cover_letter": "={{ $json.cover_letter }}",
+            "status": "To apply"
+          }
+        },
+        "options": {}
+      },
+      "name": "Log to Tracker Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [4368, 224],
+      "credentials": {"googleSheetsOAuth2Api": {"name": "Google Sheets account"}}
+    }
+  ],
+  "connections": {
+    "Twice Daily": {"main": [[{"node": "Load My Profile", "type": "main", "index": 0}]]},
+    "Load My Profile": {"main": [[{"node": "Remotive", "type": "main", "index": 0}]]},
+    "Remotive": {"main": [[{"node": "RemoteOK", "type": "main", "index": 0}]]},
+    "RemoteOK": {"main": [[{"node": "Himalayas", "type": "main", "index": 0}]]},
+    "Himalayas": {"main": [[{"node": "Jobicy", "type": "main", "index": 0}]]},
+    "Jobicy": {"main": [[{"node": "Arbeitnow", "type": "main", "index": 0}]]},
+    "Arbeitnow": {"main": [[{"node": "We Work Remotely", "type": "main", "index": 0}]]},
+    "We Work Remotely": {"main": [[{"node": "Working Nomads", "type": "main", "index": 0}]]},
+    "Working Nomads": {"main": [[{"node": "Jobspresso", "type": "main", "index": 0}]]},
+    "Jobspresso": {"main": [[{"node": "Remotive n8n and no-code", "type": "main", "index": 0}]]},
+    "Remotive n8n and no-code": {"main": [[{"node": "Merge and Filter Jobs", "type": "main", "index": 0}]]},
+    "Merge and Filter Jobs": {"main": [[{"node": "Skip Already Sent", "type": "main", "index": 0}]]},
+    "Skip Already Sent": {"main": [[{"node": "Limit", "type": "main", "index": 0}]]},
+    "Limit": {"main": [[{"node": "Score and Draft Application", "type": "main", "index": 0}]]},
+    "Score and Draft Application": {"main": [[{"node": "Parse and Keep Good Fits", "type": "main", "index": 0}]]},
+    "Parse and Keep Good Fits": {"main": [[{"node": "Send Job to Telegram", "type": "main", "index": 0}, {"node": "Has Apply Email", "type": "main", "index": 0}, {"node": "Log to Tracker Sheet", "type": "main", "index": 0}]]},
+    "Has Apply Email": {"main": [[{"node": "Draft Application Email", "type": "main", "index": 0}]]},
+    "Upload CV Form": {"main": [[{"node": "Extract from File", "type": "main", "index": 0}]]},
+    "Extract from File": {"main": [[{"node": "Save CV and Link", "type": "main", "index": 0}]]}
+  },
+  "settings": {"executionOrder": "v1", "binaryMode": "separate"},
+  "meta": {"templateCredsSetupCompleted": false}
+}
